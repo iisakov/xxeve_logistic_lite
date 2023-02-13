@@ -75,7 +75,6 @@ def get_many_solar_system_by_id(conn, solar_system_id_list):
     return result if len(result) == len(solar_system_id_list) else False
 
 
-# TODO Сделать метод, получающий все звёздные врата по списку solar_system_id
 def get_all_stargate_by_solar_system_id(conn, solar_system_id):
     result = []
     select_str = f''' SELECT distinct
@@ -97,9 +96,45 @@ def get_all_stargate_by_solar_system_id(conn, solar_system_id):
 
     for row in cursor.fetchall():
         result.append({cursor.description[i][0]: value for i, value in enumerate(row)})
-
     return result
 
+
+def get_all_stargate_by_many_solar_system_id(conn, solar_system_id_list):
+    result = {}
+    solar_system_id_list_str = ", ".join([str(solar_system_id) for solar_system_id in solar_system_id_list])
+    select_str = f''' SELECT distinct
+            md.itemID as 'stargateID',
+            mj.destinationID as 'destinationStargateID',
+            md.solarSystemID,
+            mss.solarSystemName,
+            md.constellationID,
+            md.regionID,
+            md.x,
+            md.y,
+            md.z
+        from mapDenormalize md
+        join invGroups ig on md.groupID = ig.groupID
+        join mapSolarSystems mss on md.solarSystemID = mss.solarSystemID
+        join mapJumps mj on md.itemID = mj.stargateID 
+        where ig.groupName = 'Stargate' and mss.solarSystemID in ({solar_system_id_list_str}) '''
+    cursor = conn.execute(select_str)
+    for row in cursor.fetchall():
+        if row[3] not in result:
+            result[row[3]] = []
+        result[row[3]].append({cursor.description[i][0]: value for i, value in enumerate(row)})
+    return result if len(result) == len(solar_system_id_list) else False
+
+
+def get_entity_by_tipe_id(conn, tipe_id):
+    result = {}
+    select_str = f'''
+        SELECT 
+            *
+        FROM invTypes it 
+        WHERE it.typeID = {tipe_id}'''
+    cursor = conn.execute(select_str)
+    result = {cursor.description[i][0]: value for i, value in enumerate(cursor.fetchone())}
+    return result
 
 def get_db():
     requests.get('https://www.fuzzwork.co.uk/dump/sqlite-latest.sqlite.bz2')
