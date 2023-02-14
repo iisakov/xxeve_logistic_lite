@@ -80,6 +80,11 @@ def get_all_stargate_by_solar_system_id(conn, solar_system_id):
     select_str = f''' SELECT distinct
             md.itemID as 'stargateID',
             mj.destinationID as 'destinationStargateID',
+            mss.solarSystemName || '-' || (SELECT 
+                mss.solarSystemName 
+            FROM mapDenormalize md
+            JOIN mapSolarSystems mss on md.solarSystemID = mss.solarSystemID
+            WHERE md.itemID = mj.destinationID) as 'stargateName',
             md.solarSystemID,
             mss.solarSystemName,
             md.constellationID,
@@ -90,8 +95,8 @@ def get_all_stargate_by_solar_system_id(conn, solar_system_id):
         from mapDenormalize md
         join invGroups ig on md.groupID = ig.groupID
         join mapSolarSystems mss on md.solarSystemID = mss.solarSystemID
-        join mapJumps mj on md.itemID = mj.stargateID 
-        where ig.groupName = 'Stargate' and mss.solarSystemID = {solar_system_id} '''
+        join mapJumps mj on md.itemID = mj.stargateID
+        where ig.groupName = 'Stargate' and mss.solarSystemName = {solar_system_id} '''
     cursor = conn.execute(select_str)
 
     for row in cursor.fetchall():
@@ -105,6 +110,11 @@ def get_all_stargate_by_many_solar_system_id(conn, solar_system_id_list):
     select_str = f''' SELECT distinct
             md.itemID as 'stargateID',
             mj.destinationID as 'destinationStargateID',
+            mss.solarSystemName || '-' || (SELECT 
+                mss.solarSystemName 
+            FROM mapDenormalize md
+            JOIN mapSolarSystems mss on md.solarSystemID = mss.solarSystemID
+            WHERE md.itemID = mj.destinationID) as 'stargateName',
             md.solarSystemID,
             mss.solarSystemName,
             md.constellationID,
@@ -115,14 +125,57 @@ def get_all_stargate_by_many_solar_system_id(conn, solar_system_id_list):
         from mapDenormalize md
         join invGroups ig on md.groupID = ig.groupID
         join mapSolarSystems mss on md.solarSystemID = mss.solarSystemID
-        join mapJumps mj on md.itemID = mj.stargateID 
+        join mapJumps mj on md.itemID = mj.stargateID
         where ig.groupName = 'Stargate' and mss.solarSystemID in ({solar_system_id_list_str}) '''
     cursor = conn.execute(select_str)
     for row in cursor.fetchall():
-        if row[3] not in result:
-            result[row[3]] = []
-        result[row[3]].append({cursor.description[i][0]: value for i, value in enumerate(row)})
+        if row[4] not in result:
+            result[row[4]] = []
+        result[row[4]].append({cursor.description[i][0]: value for i, value in enumerate(row)})
     return result if len(result) == len(solar_system_id_list) else False
+
+
+def get_all_objects_by_many_solar_system_id(conn, solar_system_id_list):
+    result = {}
+
+    solar_system_id_list_str = ", ".join([str(solar_system_id) for solar_system_id in solar_system_id_list])
+    select_str = f'''SELECT 
+            mss.solarSystemName,
+            itemID as objectID,
+            itemName as objectName,
+            md.solarSystemID,
+            md.x,
+            md.y,
+            md.z
+        FROM mapDenormalize md 
+        join mapSolarSystems mss on md.solarSystemID = mss.solarSystemID
+        WHERE groupID != 10 and md.solarSystemID in ({solar_system_id_list_str})'''
+    cursor = conn.execute(select_str)
+    for row in cursor.fetchall():
+        if row[0] not in result:
+            result[row[0]] = []
+        result[row[0]].append({cursor.description[i][0]: value for i, value in enumerate(row)})
+    return result if len(result) == len(solar_system_id_list) else False
+
+
+def get_all_objects_by_solar_system_id(conn, solar_system_id):
+    result = []
+    select_str = f'''SELECT 
+            mss.solarSystemName,
+            itemID as objectID,
+            itemName as objectName,
+            md.solarSystemID,
+            md.x,
+            md.y,
+            md.z
+        FROM mapDenormalize md 
+        join mapSolarSystems mss on md.solarSystemID = mss.solarSystemID
+        where md.groupID != 10 and solarSystemID = {solar_system_id} '''
+    cursor = conn.execute(select_str)
+
+    for row in cursor.fetchall():
+        result.append({cursor.description[i][0]: value for i, value in enumerate(row)})
+    return result
 
 
 def get_entity_by_tipe_id(conn, tipe_id):
@@ -135,6 +188,7 @@ def get_entity_by_tipe_id(conn, tipe_id):
     cursor = conn.execute(select_str)
     result = {cursor.description[i][0]: value for i, value in enumerate(cursor.fetchone())}
     return result
+
 
 def get_db():
     requests.get('https://www.fuzzwork.co.uk/dump/sqlite-latest.sqlite.bz2')
