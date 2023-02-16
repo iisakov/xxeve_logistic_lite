@@ -7,8 +7,8 @@ from . import STL
 
 from pprint import pprint as pp
 
-
-# TODO По координатам высчитать близость убийств к звёздным вратам.
+# TODO Разобраться с locationsID в zkb - Это может позволить сократить количество запросов к ESI
+# TODO Переписать получение убойных писем с каждой системы на регион в целом.
 # TODO Организовать из полученных данных удобный CLI интерфейс.
 
 
@@ -76,21 +76,30 @@ def run(argv, main_cli_param):
     json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем убойные письма с сайта zKillboard')
     # Получаем убойные письма с сайта zKillboard
-    for solar_system_key, solar_system_values in solar_systems.items():
-        solar_systems[solar_system_key]['killmails'] = APItools.get_killmail_by_solar_system_id(solar_system_values['solarSystemID'])
-        sleep(2)
+    region_killmails = {}
+    for region_id in {x['regionID'] for x in solar_systems.values()}:
+        region_killmails[region_id] = APItools.get_killmail_by_region_id(region_id=region_id)
 
     json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем и дописываем инфу по убойным письмам от ESI.')
     # Получаем и дописываем инфу по убойным письмам от ESI.
-    for solar_system_key, solar_system_values in solar_systems.items():
-        for i, killmail in enumerate(solar_systems[solar_system_key]['killmails']):
-            solar_systems[solar_system_key]['killmails'][i] = killmail | APItools.get_killmail_by_killmail_key(killmail_id=killmail['killmail_id'],
-                                                                                                               killmail_hash=killmail['zkb']['hash'])
+    for region_killmail_key, region_killmail_value in region_killmails.items():
+        for killmail in region_killmail_value:
+            region_killmail_value = killmail | APItools.get_killmail_by_killmail_key(killmail_id=killmail['killmail_id'],
+                                                                                     killmail_hash=killmail['zkb']['hash'])
+            for solar_system_key, solar_system_values in solar_systems.items():
+                if solar_system_values['solarSystemID'] == region_killmail_value['solar_system_id']:
+                    if 'killmails' not in solar_system_values:
+                        solar_system_values['killmails'] = []
+                    solar_system_values['killmails'].append(region_killmail_value)
+
+
     json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем информацию о кораблях в убойных письмах.')
     # Получаем информацию о кораблях в убойных письмах.
     for solar_system_key, solar_system_values in solar_systems.items():
+        if 'killmails' not in solar_system_values:
+            continue
         for i, killmail in enumerate(solar_systems[solar_system_key]['killmails']):
             for attacker in killmail['attackers']:
                 if 'ship_type_id' in attacker:
@@ -103,6 +112,8 @@ def run(argv, main_cli_param):
     print('Получаем ближайший к убийству объект и звёздные врата.')
     # Получаем ближайший к убийству объект и звёздные врата.
     for key, values in solar_systems.items():
+        if 'killmails' not in values:
+            continue
         for killmail in values['killmails']:
             killmail['nearest_stargate'] = STL.get_nearest_point(point_from=tuple(killmail['victim']['position'].values()),
                                                                  points_to={stargate['stargateName']: (stargate['x'], stargate['y'], stargate['z']) for stargate in values['stargate']})

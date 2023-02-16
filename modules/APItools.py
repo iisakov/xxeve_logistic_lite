@@ -50,3 +50,14 @@ def get_killmail_by_solar_system_id(solar_system_id):
 def get_killmail_by_many_solar_system_id(solar_system_id_list):
     request_str = f'https://zkillboard.com/api/kills/solarSystemID/{",".join([str(x) for x in solar_system_id_list])}/'
     return c_request(request_str)
+
+
+def get_killmail_by_region_id(region_id):
+    request_str = f'https://zkillboard.com/api/regionID/{region_id}/pastSeconds/3600/'
+    return c_request(request_str)
+
+
+# Отключено из-за злоупотреблений
+def get_killmail_by_many_region_id(region_id_list):
+    request_str = f'https://zkillboard.com/api/kills/solarSystemID/{",".join([str(x) for x in region_id_list])}/'
+    return c_request(request_str)
