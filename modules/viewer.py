@@ -6,7 +6,7 @@ def view_security_check_data(data, optimize_route):
     warning_str = '\033[01;33m'
     headering_str = '\033[01;42m'
     nulling_str = '\033[00m'
-    haulers = ['typeName', 'Badger', 'Tayra', 'Nereus', 'Hoarder', 'Mammoth', 'Wreathe', 'Kryos', 'Epithal', 'Miasmos', 'Iteron Mark V', 'Bestower', 'Primae', 'Noctis', 'Miasmos Quafe Ultra Edition', 'Miasmos Quafe Ultramarine Edition', 'Sigil', 'Miasmos Amastris Edition', 'Iteron Inner Zone Shipping Edition', 'Tayra Wiyrkomi Edition', 'Mammoth Nefantar Edition', 'Bestower Tash-Murkon Edition', 'Bustard', 'Occator', 'Mastodon', 'Impel', 'Covetor', 'Retriever', 'Procurer', 'Rhea', 'Nomad', 'Anshar', 'Ark']
+    haulers = ['Venture', 'Badger', 'Tayra', 'Nereus', 'Hoarder', 'Mammoth', 'Wreathe', 'Kryos', 'Epithal', 'Miasmos', 'Iteron Mark V', 'Bestower', 'Primae', 'Noctis', 'Miasmos Quafe Ultra Edition', 'Miasmos Quafe Ultramarine Edition', 'Sigil', 'Miasmos Amastris Edition', 'Iteron Inner Zone Shipping Edition', 'Tayra Wiyrkomi Edition', 'Mammoth Nefantar Edition', 'Bestower Tash-Murkon Edition', 'Bustard', 'Occator', 'Mastodon', 'Impel', 'Covetor', 'Retriever', 'Procurer', 'Rhea', 'Nomad', 'Anshar', 'Ark']
     header = ['solar_system_name', 'npc_kills', 'pod_kills', 'ship_kills', 'num_killmal']
     sub_header = ['stargate_name', 'distances', 'victim ship', 'attakers sips', '']
 

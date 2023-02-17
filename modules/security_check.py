@@ -9,8 +9,7 @@ from . import viewer
 
 from pprint import pprint as pp
 
-# TODO Разобраться с locationsID в zkb - Это может позволить сократить количество запросов к ESI
-# TODO Организовать из полученных данных удобный CLI интерфейс.
+#TODO Организовать из полученных данных удобный CLI интерфейс.
 
 
 def run(argv, main_cli_param):
@@ -90,12 +89,12 @@ def run(argv, main_cli_param):
     # Распределяем письма по системам по локациям
     print('Распределяем письма по системам по локациям')
     for solar_system_name, solar_system_value in solar_systems.items():
-        for solar_system_object in solar_system_value['stargate']:
+        for solar_system_stargate in solar_system_value['stargate']:
             for killmails in region_killmails.values():
                 for killmail in killmails:
                     if 'killmails' not in solar_system_value:
                         solar_system_value['killmails'] = []
-                    if killmail['zkb']['locationID'] == solar_system_object['stargateID']:
+                    if killmail['zkb']['locationID'] == solar_system_stargate['stargateID']:
                         solar_system_value['killmails'].append(killmail | APItools.get_killmail_by_killmail_key(killmail_id=killmail['killmail_id'],
                                                                                                                 killmail_hash=killmail['zkb']['hash']))
 
