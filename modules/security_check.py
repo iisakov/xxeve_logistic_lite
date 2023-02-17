@@ -129,5 +129,5 @@ def run(argv, main_cli_param):
     json.dump(solar_systems, open('test.json', 'w'))
     print(time.time() - time_start)
 
-    viewer.view_security_check_data(solar_systems)
+    viewer.view_security_check_data(solar_systems, optimize_route)
 

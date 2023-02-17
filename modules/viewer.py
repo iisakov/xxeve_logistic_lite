@@ -1,4 +1,6 @@
-def view_security_check_data(data):
+def view_security_check_data(data, optimize_route):
+    data = {value['solarSystemID']: value for key, value in data.items()}
+
     normaling_str = '\033[01;37m'
     dangerousing_str = '\033[01;31;41m'
     warning_str = '\033[01;33m'
@@ -7,19 +9,20 @@ def view_security_check_data(data):
     haulers = ['typeName', 'Badger', 'Tayra', 'Nereus', 'Hoarder', 'Mammoth', 'Wreathe', 'Kryos', 'Epithal', 'Miasmos', 'Iteron Mark V', 'Bestower', 'Primae', 'Noctis', 'Miasmos Quafe Ultra Edition', 'Miasmos Quafe Ultramarine Edition', 'Sigil', 'Miasmos Amastris Edition', 'Iteron Inner Zone Shipping Edition', 'Tayra Wiyrkomi Edition', 'Mammoth Nefantar Edition', 'Bestower Tash-Murkon Edition', 'Bustard', 'Occator', 'Mastodon', 'Impel', 'Covetor', 'Retriever', 'Procurer', 'Rhea', 'Nomad', 'Anshar', 'Ark']
     header = ['solar_system_name', 'npc_kills', 'pod_kills', 'ship_kills', 'num_killmal']
     sub_header = ['stargate_name', 'distances', 'victim ship', 'attakers sips', '']
-    for solar_system_key, solar_system_values in data.items():
+
+    for solar_system_id in optimize_route:
         print(f"{normaling_str}{headering_str}|{header[0]:^20}"
               f"|{header[1]:^20}"
               f"|{header[2]:^20}"
               f"|{header[3]:^20}"
               f"|{header[4]:^20}|{nulling_str}")
-        print(f"{normaling_str}| {solar_system_key:<19}"
-              f"|{solar_system_values['kills']['npc_kills']:^20}"
-              f"|{solar_system_values['kills']['pod_kills']:^20}"
-              f"|{solar_system_values['kills']['ship_kills']:^20}"
-              f"|{len(solar_system_values['killmails']):^20}|")
+        print(f"{normaling_str}| {data[solar_system_id]['solarSystemName']:<19}"
+              f"|{data[solar_system_id]['kills']['npc_kills']:^20}"
+              f"|{data[solar_system_id]['kills']['pod_kills']:^20}"
+              f"|{data[solar_system_id]['kills']['ship_kills']:^20}"
+              f"|{len(data[solar_system_id]['killmails']):^20}|")
         print(''.join(['-']*len(header)*20)+'------')
-        for killmail in solar_system_values['killmails']:
+        for killmail in data[solar_system_id]['killmails']:
             print(f"{normaling_str}|{sub_header[-1]:^20}"
                   f"|{headering_str}{sub_header[0]:^20}"
                   f"|{sub_header[1]:^20}"
