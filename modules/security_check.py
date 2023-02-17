@@ -1,18 +1,21 @@
 import json
+import time
 from time import sleep
 
 from . import SQLtools
 from . import APItools
 from . import STL
+from . import viewer
 
 from pprint import pprint as pp
 
 # TODO Разобраться с locationsID в zkb - Это может позволить сократить количество запросов к ESI
-# TODO Переписать получение убойных писем с каждой системы на регион в целом.
 # TODO Организовать из полученных данных удобный CLI интерфейс.
 
 
 def run(argv, main_cli_param):
+    time_start = time.time()
+
     security_mode = argv['scm']                                                 # Модификатор безопасности маршрута
     solar_system_name_from = argv['scf']                                        # Название Начальной звёздной системы
     solar_system_name_to = argv['sct']                                          # Название конечной звёздной системы
@@ -60,10 +63,14 @@ def run(argv, main_cli_param):
     json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем снимок убийств за последний час.')
     # Получаем снимок убийств за последний час.
+    for solar_system_key, solar_system_values in solar_systems.items():
+        solar_system_values['kills'] = {'npc_kills': 0, 'pod_kills': 0, 'ship_kills': 0}
+
     for solar_system_kill in APItools.get_system_kills():
         for solar_system_key, solar_system_values in solar_systems.items():
             if solar_system_kill['system_id'] == solar_system_values['solarSystemID']:
-                solar_systems[solar_system_key]['kills'] = solar_system_kill
+                solar_system_values['kills'] = solar_system_kill
+                break
 
     json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем снимок прыжков за последний час.')
@@ -80,19 +87,17 @@ def run(argv, main_cli_param):
     for region_id in {x['regionID'] for x in solar_systems.values()}:
         region_killmails[region_id] = APItools.get_killmail_by_region_id(region_id=region_id)
 
-    json.dump(solar_systems, open('test.json', 'w'))
-    print('Получаем и дописываем инфу по убойным письмам от ESI.')
-    # Получаем и дописываем инфу по убойным письмам от ESI.
-    for region_killmail_key, region_killmail_value in region_killmails.items():
-        for killmail in region_killmail_value:
-            region_killmail_value = killmail | APItools.get_killmail_by_killmail_key(killmail_id=killmail['killmail_id'],
-                                                                                     killmail_hash=killmail['zkb']['hash'])
-            for solar_system_key, solar_system_values in solar_systems.items():
-                if solar_system_values['solarSystemID'] == region_killmail_value['solar_system_id']:
-                    if 'killmails' not in solar_system_values:
-                        solar_system_values['killmails'] = []
-                    solar_system_values['killmails'].append(region_killmail_value)
-
+    # Распределяем письма по системам по локациям
+    print('Распределяем письма по системам по локациям')
+    for solar_system_name, solar_system_value in solar_systems.items():
+        for solar_system_object in solar_system_value['stargate']:
+            for killmails in region_killmails.values():
+                for killmail in killmails:
+                    if 'killmails' not in solar_system_value:
+                        solar_system_value['killmails'] = []
+                    if killmail['zkb']['locationID'] == solar_system_object['stargateID']:
+                        solar_system_value['killmails'].append(killmail | APItools.get_killmail_by_killmail_key(killmail_id=killmail['killmail_id'],
+                                                                                                                killmail_hash=killmail['zkb']['hash']))
 
     json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем информацию о кораблях в убойных письмах.')
@@ -108,6 +113,7 @@ def run(argv, main_cli_param):
             if 'ship_type_id' in killmail['victim']:
                 killmail['victim']['ship'] = SQLtools.get_entity_by_tipe_id(conn=SQLtools.get_conn(),
                                                                             tipe_id=killmail['victim']['ship_type_id'])
+
     json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем ближайший к убийству объект и звёздные врата.')
     # Получаем ближайший к убийству объект и звёздные врата.
@@ -121,4 +127,7 @@ def run(argv, main_cli_param):
                                                                points_to={object['objectName']: (object['x'], object['y'], object['z']) for object in values['object']})
 
     json.dump(solar_systems, open('test.json', 'w'))
+    print(time.time() - time_start)
+
+    viewer.view_security_check_data(solar_systems)
 

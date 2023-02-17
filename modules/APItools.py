@@ -8,8 +8,8 @@ def c_request(request_str):
     response = requests.get(url=request_str, headers=headers)
     print(inspect.stack()[1][3], response.status_code)
     while response.status_code != 200:
-        print(inspect.stack()[1][3], response.status_code)
         response = requests.get(url=request_str, headers=headers)
+        print(inspect.stack()[1][3], response.status_code)
 
     return response.json()
 

@@ -149,7 +149,7 @@ def get_all_objects_by_many_solar_system_id(conn, solar_system_id_list):
             md.z
         FROM mapDenormalize md 
         join mapSolarSystems mss on md.solarSystemID = mss.solarSystemID
-        WHERE groupID != 10 and md.solarSystemID in ({solar_system_id_list_str})'''
+        WHERE md.solarSystemID in ({solar_system_id_list_str})'''
     cursor = conn.execute(select_str)
     for row in cursor.fetchall():
         if row[0] not in result:
@@ -170,7 +170,7 @@ def get_all_objects_by_solar_system_id(conn, solar_system_id):
             md.z
         FROM mapDenormalize md 
         join mapSolarSystems mss on md.solarSystemID = mss.solarSystemID
-        where md.groupID != 10 and solarSystemID = {solar_system_id} '''
+        where solarSystemID = {solar_system_id} '''
     cursor = conn.execute(select_str)
 
     for row in cursor.fetchall():
