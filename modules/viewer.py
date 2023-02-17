@@ -1,8 +1,11 @@
+import datetime
+
+
 def view_security_check_data(data, optimize_route):
     data = {value['solarSystemID']: value for key, value in data.items()}
 
     normaling_str = '\033[01;37m'
-    dangerousing_str = '\033[01;31;41m'
+    dangerousing_str = '\033[01;36;41m'
     warning_str = '\033[01;33m'
     headering_str = '\033[01;42m'
     nulling_str = '\033[00m'
@@ -28,9 +31,9 @@ def view_security_check_data(data, optimize_route):
                   f"|{sub_header[1]:^20}"
                   f"|{sub_header[2]:^20}"
                   f"|{sub_header[3]:^20}|{nulling_str}")
-            print(f"{normaling_str}{warning_str if not killmail['zkb']['npc'] else ''}|{sub_header[-1]:^20}"
+            print(f"{normaling_str}{warning_str if not killmail['zkb']['npc'] else ''}|{killmail['killmail_time'][-9:-1] + ' +Z3':^20}"
                   f"| {killmail['nearest_stargate']['point_to']:<19}"
                   f"| {killmail['nearest_stargate']['distances']:<19}"
-                  f"| {dangerousing_str if killmail['victim']['ship']['typeName'] in haulers else ''}{killmail['victim']['ship']['typeName']:<19}"
+                  f"{dangerousing_str if killmail['victim']['ship']['typeName'] in haulers else ''}| {killmail['victim']['ship']['typeName']:<19}"
                   f"| {', '.join([x['ship']['typeName'] for x in killmail['attackers'] if 'ship' in x]):<19}|{nulling_str}")
         print(''.join(['-']*len(header)*20)+'------')
