@@ -36,7 +36,7 @@ def print_end_section(num_cols: int, col_space: int):
 
 def create_table(header: dict, rows: list, **kwargs):
     current_offset = kwargs['offset'] if 'offset' in kwargs else 0
-    max_len = 0
+    max_len = kwargs['max_len'] if 'max_len' in kwargs else 0
     num_field = len(header['data'])
 
     def count_len(table, max_len):
@@ -65,7 +65,10 @@ def create_table(header: dict, rows: list, **kwargs):
                   col_space=max_len+2,
                   mode=row['mode'] if 'mode' in row else 'normal')
         if 'sub_table' in row:
-            create_table(row['sub_table']['header'], row['sub_table']['rows'], offset=current_offset+1)
+            create_table(header=row['sub_table']['header'],
+                         rows=row['sub_table']['rows'],
+                         offset=current_offset+1,
+                         max_len=max_len)
 
     print_offset(current_offset, max_len+2)
     print_end_section(num_cols=num_field,
