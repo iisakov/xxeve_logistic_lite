@@ -6,6 +6,7 @@ mode_str = {'normal':       {'header':  colorama.Back.GREEN + colorama.Fore.LIGH
                              'row':     colorama.Fore.LIGHTRED_EX},
             'warning':      {'header':  colorama.Back.YELLOW + colorama.Fore.LIGHTWHITE_EX,
                              'row':     colorama.Fore.LIGHTYELLOW_EX},
+            'not_npc':      {'row':     colorama.Fore.LIGHTMAGENTA_EX},
             'nulling':       colorama.Style.RESET_ALL}
 
 
