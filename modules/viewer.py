@@ -1,4 +1,5 @@
 import datetime
+import json
 from pprint import pp
 
 from . import VIEWERtools
@@ -48,4 +49,5 @@ def view_security_check_data(data, optimize_route):
 
             table['rows'][num_row]['sub_table']['rows'].append(sub_row)
 
+    json.dump(table, open('test.json', 'w'))
     VIEWERtools.create_table(table['header'], table['rows'])
