@@ -1,14 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block content %}
+<h1>Hi!</h1>
 <div>
-    <form action="/sc/shortest/Jita/Amarr" target="_blank">
-        <button>тык</button>
+    <form action="/sc/shortest/Jita/Amarr">
+        <button class="btn btn-primary">тык</button>
     </form>
 </div>
-</body>
-</html>
+{% endblock %}
+
