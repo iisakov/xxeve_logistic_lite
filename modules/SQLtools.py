@@ -37,7 +37,7 @@ def get_many_solar_system_by_name(conn, solar_system_name_list):
 
     cursor = conn.execute(select_str)
     for row in cursor.fetchall():
-        result[row[5]] = {cursor.description[i][0]: value for i, value in enumerate(row)}
+        result[(row[5], row[4])] = {cursor.description[i][0]: value for i, value in enumerate(row)}
     return result if len(result) == len(solar_system_name_list) else False
 
 
@@ -71,7 +71,7 @@ def get_many_solar_system_by_id(conn, solar_system_id_list):
     cursor = conn.execute(select_str)
 
     for row in cursor.fetchall():
-        result[row[5]] = {cursor.description[i][0]: value for i, value in enumerate(row)}
+        result[(row[5], row[4])] = {cursor.description[i][0]: value for i, value in enumerate(row)}
     return result if len(result) == len(solar_system_id_list) else False
 
 
@@ -129,9 +129,9 @@ def get_all_stargate_by_many_solar_system_id(conn, solar_system_id_list):
         where ig.groupName = 'Stargate' and mss.solarSystemID in ({solar_system_id_list_str}) '''
     cursor = conn.execute(select_str)
     for row in cursor.fetchall():
-        if row[4] not in result:
-            result[row[4]] = []
-        result[row[4]].append({cursor.description[i][0]: value for i, value in enumerate(row)})
+        if (row[4], row[3]) not in result:
+            result[(row[4], row[3])] = []
+        result[(row[4], row[3])].append({cursor.description[i][0]: value for i, value in enumerate(row)})
     return result if len(result) == len(solar_system_id_list) else False
 
 
@@ -140,27 +140,49 @@ def get_all_objects_by_many_solar_system_id(conn, solar_system_id_list):
 
     solar_system_id_list_str = ", ".join([str(solar_system_id) for solar_system_id in solar_system_id_list])
     select_str = f'''SELECT 
-            mss.solarSystemName,
-            itemID as objectID,
-            itemName as objectName,
-            md.solarSystemID,
-            md.x,
-            md.y,
-            md.z
-        FROM mapDenormalize md 
-        join mapSolarSystems mss on md.solarSystemID = mss.solarSystemID
-        WHERE md.solarSystemID in ({solar_system_id_list_str})'''
+        mss.solarSystemID,
+        mss.solarSystemName,
+        itemName as objectName,
+        md.solarSystemID,
+        md.x,
+        md.y,
+        md.z
+    FROM mapDenormalize md 
+    join mapSolarSystems mss on md.solarSystemID = mss.solarSystemID 
+    WHERE md.solarSystemID in ({solar_system_id_list_str}) and itemName not NULL
+    union
+    SELECT distinct
+        mss.solarSystemID,
+        mss.solarSystemName,
+        mss.solarSystemName || '-' || (SELECT 
+            mss.solarSystemName 
+            FROM mapDenormalize md
+            JOIN mapSolarSystems mss on md.solarSystemID = mss.solarSystemID
+            WHERE md.itemID = mj.destinationID) as 'objectName',
+        md.solarSystemID,
+        md.x,
+        md.y,
+        md.z
+    from mapDenormalize md
+    join invGroups ig on md.groupID = ig.groupID
+    join mapSolarSystems mss on md.solarSystemID = mss.solarSystemID
+    join mapJumps mj on md.itemID = mj.stargateID
+    where ig.groupName = 'Stargate' and mss.solarSystemID in ({solar_system_id_list_str})'''
+
     cursor = conn.execute(select_str)
+
     for row in cursor.fetchall():
-        if row[0] not in result:
-            result[row[0]] = []
-        result[row[0]].append({cursor.description[i][0]: value for i, value in enumerate(row)})
+        if (row[1], row[0]) not in result:
+            result[(row[1], row[0])] = []
+        result[(row[1], row[0])].append({cursor.description[i][0]: value for i, value in enumerate(row)})
     return result if len(result) == len(solar_system_id_list) else False
 
 
 def get_all_objects_by_solar_system_id(conn, solar_system_id):
     result = []
-    select_str = f'''SELECT 
+    select_str = f'''
+    
+    SELECT 
             mss.solarSystemName,
             itemID as objectID,
             itemName as objectName,

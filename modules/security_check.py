@@ -1,9 +1,13 @@
 import json
 import time
+import asyncio
+
+from itertools import chain
 from time import sleep
 
 from . import SQLtools
 from . import APItools
+from . import asyncAPItools
 from . import STL
 from . import viewer
 
@@ -15,35 +19,35 @@ from pprint import pprint as pp
 def run(argv, main_cli_param):
     time_start = time.time()
 
-    security_mode = argv['scm']                                                 # Модификатор безопасности маршрута
-    solar_system_name_from = argv['scf']                                        # Название Начальной звёздной системы
-    solar_system_name_to = argv['sct']                                          # Название конечной звёздной системы
-    solar_system_name_list = [solar_system_name_from, solar_system_name_to]     # Список названий звёздных систем
+    security_mode = argv['scm']                                     # Модификатор безопасности маршрута
+    solar_system_from = argv['scf']                                 # Название Начальной звёздной системы
+    solar_system_to = argv['sct']                                   # Название конечной звёздной системы
+    solar_system_list = [solar_system_from, solar_system_to]        # Список названий звёздных систем
 
     print('Получаем сведения о начальной и конечной звёдных системах.')
     # Получаем сведения о начальной и конечной звёдных системах.
     solar_systems = SQLtools.get_many_solar_system_by_name(conn=SQLtools.get_conn(),
-                                                           solar_system_name_list=solar_system_name_list)
+                                                           solar_system_name_list=solar_system_list)
 
-    json.dump(solar_systems, open('test.json', 'w'))
+    solar_system_list = list(solar_systems)
+    solar_system_from = solar_system_list[0]
+    solar_system_to = solar_system_list[1]
+
     print('Получаем оптимальный маршрут (список solarSystemID).')
     # Получаем оптимальный маршрут (список solarSystemID).
-    optimize_route = APItools.get_route(solar_system_id_from=solar_systems[solar_system_name_from]['solarSystemID'],
-                                        solar_system_id_to=solar_systems[solar_system_name_to]['solarSystemID'],
+    optimize_route = APItools.get_route(solar_system_id_from=solar_systems[solar_system_from]['solarSystemID'],
+                                        solar_system_id_to=solar_systems[solar_system_to]['solarSystemID'],
                                         security_mode=security_mode)
 
-    json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем информацию о всех звёздных системах, входящих в маршрут.')
     # Получаем информацию о всех звёздных системах.
     solar_systems = SQLtools.get_many_solar_system_by_id(conn=SQLtools.get_conn(),
                                                          solar_system_id_list=optimize_route)
 
-    json.dump(solar_systems, open('test.json', 'w'))
     print('Добавляем (перезаписываем) промежуточные названия звёздных систем.')
     # Добавляем (перезаписываем) промежуточные названия звёздных систем.
     solar_system_name_list = list(solar_systems.keys())
 
-    json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем список звёздных врат по каждой системе.')
     # Получаем список звёздных врат по каждой системе.
     solar_systems_stargate = SQLtools.get_all_stargate_by_many_solar_system_id(conn=SQLtools.get_conn(),
@@ -51,7 +55,6 @@ def run(argv, main_cli_param):
     for solar_system_name, solar_system_stargate in solar_systems_stargate.items():
         solar_systems[solar_system_name]['stargate'] = solar_system_stargate
 
-    json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем список всех доступных объектов по каждой системе.')
     # Получаем список всех доступных объектов по каждой системе.
     solar_systems_object = SQLtools.get_all_objects_by_many_solar_system_id(conn=SQLtools.get_conn(),
@@ -59,7 +62,6 @@ def run(argv, main_cli_param):
     for solar_system_name, solar_system_values in solar_systems_object.items():
         solar_systems[solar_system_name]['object'] = solar_system_values
 
-    json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем снимок убийств за последний час.')
     # Получаем снимок убийств за последний час.
     for solar_system_key, solar_system_values in solar_systems.items():
@@ -71,7 +73,6 @@ def run(argv, main_cli_param):
                 solar_system_values['kills'] = solar_system_kill
                 break
 
-    json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем снимок прыжков за последний час.')
     # Получаем снимок прыжков за последний час.
     for solar_system_jump in APItools.get_system_jumps():
@@ -79,26 +80,20 @@ def run(argv, main_cli_param):
             if solar_system_jump['system_id'] == solar_system_values['solarSystemID']:
                 solar_systems[solar_system_key]['jump'] = solar_system_jump
 
-    json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем убойные письма с сайта zKillboard')
     # Получаем убойные письма с сайта zKillboard
-    region_killmails = {}
-    for region_id in {x['regionID'] for x in solar_systems.values()}:
-        region_killmails[region_id] = APItools.get_killmail_by_region_id(region_id=region_id)
-
-    # Распределяем письма по системам по локациям
-    print('Распределяем письма по системам по локациям')
-    for solar_system_name, solar_system_value in solar_systems.items():
-        for solar_system_stargate in solar_system_value['stargate']:
-            for killmails in region_killmails.values():
-                for killmail in killmails:
+    region_id = {solar_system['regionID'] for solar_system in solar_systems.values()}
+    killmail_list_from_zkb = list(chain(*asyncio.run(asyncAPItools.get_killmail_by_many_region_id(region_id))))
+    killmail_list_from_esi = asyncio.run(asyncAPItools.get_killmails_by_killmail_keys([(i['killmail_id'], i['zkb']['hash']) for i in killmail_list_from_zkb]))
+    for killmail_from_zkb in killmail_list_from_zkb:
+        for killmail_from_esi in killmail_list_from_esi:
+            if killmail_from_zkb['killmail_id'] == killmail_from_esi['killmail_id']:
+                for solar_system_key, solar_system_value in solar_systems.items():
                     if 'killmails' not in solar_system_value:
                         solar_system_value['killmails'] = []
-                    if killmail['zkb']['locationID'] == solar_system_stargate['stargateID']:
-                        solar_system_value['killmails'].append(killmail | APItools.get_killmail_by_killmail_key(killmail_id=killmail['killmail_id'],
-                                                                                                                killmail_hash=killmail['zkb']['hash']))
+                    if killmail_from_esi['solar_system_id'] in solar_system_key:
+                        solar_system_value['killmails'].append(killmail_from_zkb | killmail_from_esi)
 
-    json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем информацию о кораблях в убойных письмах.')
     # Получаем информацию о кораблях в убойных письмах.
     for solar_system_key, solar_system_values in solar_systems.items():
@@ -113,7 +108,6 @@ def run(argv, main_cli_param):
                 killmail['victim']['ship'] = SQLtools.get_entity_by_tipe_id(conn=SQLtools.get_conn(),
                                                                             tipe_id=killmail['victim']['ship_type_id'])
 
-    json.dump(solar_systems, open('test.json', 'w'))
     print('Получаем ближайший к убийству объект и звёздные врата.')
     # Получаем ближайший к убийству объект и звёздные врата.
     for key, values in solar_systems.items():
@@ -125,8 +119,6 @@ def run(argv, main_cli_param):
             killmail['nearest_object'] = STL.get_nearest_point(point_from=tuple(killmail['victim']['position'].values()),
                                                                points_to={object['objectName']: (object['x'], object['y'], object['z']) for object in values['object']})
 
-    json.dump(solar_systems, open('test.json', 'w'))
     print(time.time() - time_start)
-
     viewer.view_security_check_data(solar_systems, optimize_route)
 
