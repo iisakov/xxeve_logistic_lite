@@ -1,4 +1,5 @@
 import datetime
+import json
 from pprint import pp
 
 from . import VIEWERtools
@@ -15,7 +16,7 @@ def view_security_check_data(data, optimize_route):
                   'Retriever', 'Procurer', 'Rhea', 'Nomad', 'Anshar', 'Ark']
 
     header = {'data': ['solar_system_name', 'npc_kills', 'pod_kills', 'ship_kills', 'num_killmal']}
-    sub_header = {'data': ['killmail_time', 'stargate_name', 'distances', 'victim ship', 'npc']}
+    sub_header = {'data': ['killmail_time', 'object_name', 'distances', 'victim ship', 'npc']}
     table = {'header': header,
              'rows': []}
 
@@ -31,8 +32,8 @@ def view_security_check_data(data, optimize_route):
                 table['rows'][num_row]['sub_table'] = {'header': sub_header, 'rows': []}
 
             sub_row = {'data': [killmail['killmail_time'],
-                       killmail['nearest_stargate']['point_to'],
-                       killmail['nearest_stargate']['distances'],
+                       killmail['nearest_object']['point_to'] if len(killmail['nearest_object']['point_to']) < 20 else killmail['nearest_object']['point_to'][:20] + '...',
+                       killmail['nearest_object']['distances'],
                        killmail['victim']['ship']['typeName'],
                        killmail['zkb']['npc']
                        ]}
@@ -48,4 +49,5 @@ def view_security_check_data(data, optimize_route):
 
             table['rows'][num_row]['sub_table']['rows'].append(sub_row)
 
+    json.dump(table, open('test.json', 'w'))
     VIEWERtools.create_table(table['header'], table['rows'])

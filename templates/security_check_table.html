@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+    <h1>{{from_solar_system}} - {{to_solar_system}}</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                {% for element in data.header.data %}
+                <th scope="col" class="table-success">{{element}}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data.rows %}
+            <tr>
+                {% for element in row.data %}
+                <td>{{element}}</td>
+                {% endfor %}
+            </tr>
+            {% if row.sub_table %}
+                <thead>
+                    <tr>
+                        <th></th>
+                        {% for sub_element in row.sub_table.header.data %}
+                        <th scope="col" class="table-success">{{sub_element}}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for sub_row in row.sub_table.rows %}
+                    <tr>
+                        <td></td>
+                    {% for sub_element in sub_row.data %}
+                        {% if sub_row.mode == 'dangerous' %}
+                        <td class="table-danger">{{sub_element}}
+                        {% elif sub_row.mode == 'warning' %}
+                        <td class="table-warning">{{sub_element}}
+                        {% else %}
+                        <td>{{sub_element}}
+                        {% endif %}
+                        </td>
+                    {% endfor %}
+                    </tr>
+                {% endfor %}
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

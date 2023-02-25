@@ -7,6 +7,8 @@ from itertools import chain
 from importlib import import_module
 
 
+# TODO Дописать модуль -v i:[web/cli/gui] или view:[web/cli/gui] для отображения в нужных интерфейсах.
+
 def main(cli_params):
     # Чтение параметров из консоли
     cli_params_dict = json.load(open('config.json'))['CLI_param']
