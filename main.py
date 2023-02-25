@@ -1,15 +1,15 @@
-#! /usr/bin/python3
+#! ./venv/bin/python3
 
 # общие пакеты
 import sys
 import json
-from itertools import chain
 from importlib import import_module
 
 
 # TODO Дописать модуль -v i:[web/cli/gui] или view:[web/cli/gui] для отображения в нужных интерфейсах.
 
 def main(cli_params):
+
     # Чтение параметров из консоли
     cli_params_dict = json.load(open('config.json'))['CLI_param']
     cli_params = cli_params[1:]
@@ -26,7 +26,6 @@ def main(cli_params):
                     if cli_param[0] in modul_args:
                         modul_args[cli_param[0]] = cli_param[1]
 
-                # Подключение модуля todo разделить подключение модуля и запуск модуля. В идеале добавить приоритетность запуска модулей
                 module = import_module(cli_params_dict[existing_param]['import_path'])   # Подключаем необходимый модуль
                 module.run(modul_args, cli_param)                                        # Запускаем модуль
 

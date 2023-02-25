@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#! ./venv/bin/python3
 import json
 from os import system
 
@@ -19,7 +19,7 @@ def index():
 def get_security_check(mode, from_solar_system, to_solar_system):
     mode = mode if mode in ['shortest', 'secure', 'insecure'] else config['CLI_param']['-sc']['sub_params']['scm']['default']
 
-    system(f'./main.py -w -sc scm:{mode} scf:{from_solar_system} sct:{to_solar_system}')
+    system(f'python ./main.py -sc scm:{mode} scf:{from_solar_system} sct:{to_solar_system}')
     path = 'security_check_table.html'
     return render_template(path,
                            title=f'{from_solar_system} - {to_solar_system}',
